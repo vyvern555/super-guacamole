@@ -17,6 +17,19 @@ jobs:
           gradle-version: 8.5
       - name: Unzip
         run: unzip -oq AIPhotoEnhancer_step6.zip
+      - name: Fix camera unbind
+        run: |
+          python3 - <<'PY'
+          p = 'AIPhotoEnhancer_fixsrc/app/src/main/java/com/aienhancer/app/CameraScreen.kt'
+          s = open(p, encoding='utf-8').read()
+          old = "    DisposableEffect(provider, preview, imageCapture) {\n        onDispose {\n            runCatching { provider?.unbind(preview, imageCapture) }\n        }\n    }\n"
+          new = "    val boundProvider = provider\n    DisposableEffect(boundProvider, preview, imageCapture) {\n        onDispose {\n            runCatching { boundProvider?.unbind(preview, imageCapture) }\n        }\n    }\n"
+          if old in s:
+              open(p, 'w', encoding='utf-8').write(s.replace(old, new))
+              print('camera fix applied')
+          else:
+              print('camera fix not needed')
+          PY
       - name: Build
         working-directory: AIPhotoEnhancer_fixsrc
         run: |
